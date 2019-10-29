@@ -2,6 +2,17 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core');
+var request = require('request');
+let APIKEY = "e7c08c6236afd4f414023bbc6db15ae2";
+let baseURL = 'https://api.themoviedb.org/3/';
+let info;
+
+request(baseURL + 'search/movie?api_key=' + APIKEY + '&query=starwars', function(error, response, body) {
+    console.log('error:', error); // Print the error if one occurred
+    console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+    info = body;
+});
+
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -21,7 +32,7 @@ const HelloWorldIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'HelloWorldIntent';
     },
     handle(handlerInput) {
-        const speakOutput = 'Hello World!';
+        const speakOutput = info;
         return handlerInput.responseBuilder
             .speak(speakOutput)
             //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
