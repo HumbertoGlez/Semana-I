@@ -2,43 +2,57 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core');
-var request = require('request');
+var request = require('sync-request');
 let APIKEY = "e7c08c6236afd4f414023bbc6db15ae2";
 let baseURL = 'https://api.themoviedb.org/3/';
-let info;
-
-request(baseURL + 'search/movie?api_key=' + APIKEY + '&query=starwars', function(error, response, body) {
-    console.log('error:', error); // Print the error if one occurred
-    console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-    info = body;
-});
-
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'Welcome, you can say Hello or Help. Which would you like to try?';
+        const speakOutput = 'Welcome to Movie Reviews, tell me what do you need?';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
             .getResponse();
     }
 };
-const HelloWorldIntentHandler = {
+const PedirReviewIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'HelloWorldIntent';
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'PedirReviewIntent';
     },
     handle(handlerInput) {
-        const speakOutput = info;
-        return handlerInput.responseBuilder
+        const slots = handlerInput.requestEnvelope.request.intent.slots;
+        let movie = slots['movie'].value;
+        var res = request('GET', baseURL + 'search/movie?api_key=' + APIKEY + '&query=' + movie);
+        var json = JSON.parse(res.getBody());
+        var number = json.total_results;
+        let speakOutput = "I'm sorry, I could'nt find that movie.";
+        if (number <= 0) {
+            return handlerInput.responseBuilder
             .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .reprompt()
             .getResponse();
+        }
+        let id = json.results[0].id;
+        var reviewRes = request('GET', baseURL + 'movie/' + id + '/reviews?api_key=' + APIKEY + '&language=en-US');
+        var jsonReview = JSON.parse(reviewRes.getBody());
+        if (jsonReview.total_results <= 0) {
+            return handlerInput.responseBuilder
+            .speak("I'm sorry, I could'nt find any review for that movie.")
+            .reprompt()
+            .getResponse();
+        }
+        speakOutput = 'This is one review of ' + json.results[0].title + ', ' + jsonReview.results[0].content;
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt('Anything else?')
+        .getResponse();
     }
 };
+
 const HelpIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -119,7 +133,7 @@ const ErrorHandler = {
 exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
-        HelloWorldIntentHandler,
+        PedirReviewIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
