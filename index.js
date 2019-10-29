@@ -2,9 +2,17 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core');
+<<<<<<< HEAD
 var request = require('sync-request');
 let APIKEY = "e7c08c6236afd4f414023bbc6db15ae2";
 let baseURL = 'https://api.themoviedb.org/3/';
+=======
+
+let APIKEY = "e7c08c6236afd4f414023bbc6db15ae2";
+let baseURL = 'https://api.themoviedb.org/3/';
+var request = require('sync-request');
+
+>>>>>>> 7e6e3cf8fa097bd59a72b5da49b60cc547163d0c
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -24,6 +32,7 @@ const PedirReviewIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'PedirReviewIntent';
     },
     handle(handlerInput) {
+<<<<<<< HEAD
         const slots = handlerInput.requestEnvelope.request.intent.slots;
         let movie = slots['movie'].value;
         var res = request('GET', baseURL + 'search/movie?api_key=' + APIKEY + '&query=' + movie);
@@ -32,6 +41,13 @@ const PedirReviewIntentHandler = {
         let speakOutput = "I'm sorry, I could'nt find that movie.";
         if (number <= 0) {
             return handlerInput.responseBuilder
+=======
+        let movieName = 'starwars';
+        let res = request('GET', baseURL + 'search/movie?api_key=' + APIKEY + '&query=' + movieName);
+        let num = JSON.parse(res.getBody());
+        const speakOutput = num.results[0].id;
+        return handlerInput.responseBuilder
+>>>>>>> 7e6e3cf8fa097bd59a72b5da49b60cc547163d0c
             .speak(speakOutput)
             .reprompt()
             .getResponse();
