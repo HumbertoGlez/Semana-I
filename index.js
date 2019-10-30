@@ -33,14 +33,14 @@ const PedirReviewIntentHandler = {
             var res = request('GET', baseURL + 'search/movie?api_key=' + APIKEY + '&query=' + movie);
             var json = JSON.parse(res.getBody());
             var number = json.total_results;
-            speakOutput = "I'm sorry, I could'nt find the movie " + movie;
+            speakOutput = "I'm sorry, I couldn't find the movie " + movie;
             if (number > 0) {
                 let id = json.results[0].id;
                 var reviewRes = request('GET', baseURL + 'movie/' + id + '/reviews?api_key=' + APIKEY + '&language=en-US');
                 review = reviewRes.getBody();
                 jsonReview = JSON.parse(review);
                 
-                speakOutput = "I'm sorry, I could'nt find any review for the movie " + json.results[0].title.replace(/&/g, '');
+                speakOutput = "I'm sorry, I couldn't find any review for the movie " + json.results[0].title.replace(/&/g, '');
                 if (jsonReview.total_results > 0) {
                     for (let i  = 0; i < jsonReview.total_results; i++) {
                         if (!jsonReview.results[i].content.includes("&")) {
