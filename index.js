@@ -40,7 +40,7 @@ const PedirReviewIntentHandler = {
                 review = reviewRes.getBody();
                 jsonReview = JSON.parse(review);
                 
-                speakOutput = "I'm sorry, I could'nt find any review for the movie " + json.results[0].title;
+                speakOutput = "I'm sorry, I could'nt find any review for the movie " + json.results[0].title.replace(/&/g, '');
                 if (jsonReview.total_results > 0) {
                     for (let i  = 0; i < jsonReview.total_results; i++) {
                         if (!jsonReview.results[i].content.includes("&")) {
