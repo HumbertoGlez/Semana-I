@@ -27,7 +27,9 @@ const PedirReviewIntentHandler = {
         const slots = handlerInput.requestEnvelope.request.intent.slots;
         let movie = slots['movie'].value;
         let speakOutput = "I didn't quite get that, try again, please."
-        if (movie !== null){
+        let review;
+        var jsonReview
+        if (typeof movie !== 'undefined'){
             var res = request('GET', baseURL + 'search/movie?api_key=' + APIKEY + '&query=' + movie);
             var json = JSON.parse(res.getBody());
             var number = json.total_results;
@@ -35,10 +37,17 @@ const PedirReviewIntentHandler = {
             if (number > 0) {
                 let id = json.results[0].id;
                 var reviewRes = request('GET', baseURL + 'movie/' + id + '/reviews?api_key=' + APIKEY + '&language=en-US');
-                var jsonReview = JSON.parse(reviewRes.getBody());
+                review = reviewRes.getBody();
+                jsonReview = JSON.parse(review);
+                
                 speakOutput = "I'm sorry, I could'nt find any review for the movie " + json.results[0].title;
                 if (jsonReview.total_results > 0) {
-                    speakOutput = 'This is one review of ' + json.results[0].title + ', ' + jsonReview.results[0].content;
+                    for (let i  = 0; i < jsonReview.total_results; i++) {
+                        if (!jsonReview.results[i].content.includes("&")) {
+                            speakOutput = 'This is one review of '+ json.results[0].title + ', ' + jsonReview.results[i].content;
+                            break;
+                        }
+                    }
                 }
             }
         }
