@@ -116,7 +116,7 @@ const ReviewIntentHandler = {
                 if (jsonReview.total_results > 0) {
                     for (let i = 0; i < jsonReview.total_results; i++) {
                         if (!jsonReview.results[i].content.includes("&")) {
-                            speakOutput = 'This is one review of ' + json.results[0].title + ', ' + jsonReview.results[i].content;
+                            speakOutput = 'This is one review of ' + json.results[0].title.replace(/&/g, '') + ', ' + jsonReview.results[i].content;
                             break;
                         }
                     }
