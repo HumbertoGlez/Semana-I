@@ -2,28 +2,98 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core');
-var request = require('sync-request');
+
 let APIKEY = "e7c08c6236afd4f414023bbc6db15ae2";
 let baseURL = 'https://api.themoviedb.org/3/';
 let search = 'search/movie?api_key=';
 let query = '&query=';
+var request = require('sync-request');
+
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'Welcome to Movie Reviews, tell me what do you need?';
+        const speakOutput = 'Welcome to Movie Review, tell me if you want a review, rating or overview follow by the movie title?';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
             .getResponse();
     }
 };
-const PedirReviewIntentHandler = {
+
+const OverviewIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
-            Alexa.getIntentName(handlerInput.requestEnvelope) === 'PedirReviewIntent';
+            Alexa.getIntentName(handlerInput.requestEnvelope) === 'OverviewIntent';
+    },
+    handle(handlerInput) {
+        var speakOutput = "Sorry, I didn't find any movie with that name?";
+        let movieOriginalTitle;
+        let movieID;
+        let runtime;
+
+        const slots = handlerInput.requestEnvelope.request.intent.slots;
+        let movieTitle = slots['overview'].value;
+        let movieRuntime = slots['runtime'].value;
+        if (typeof movieTitle !== 'undefined') { // give runtime and overview
+            let res = request('GET', baseURL + 'search/movie?api_key=' + APIKEY + '&query=' + movieTitle);
+            let movieObj = JSON.parse(res.getBody());
+            let movieOverview = movieObj.results[0].overview;
+            movieOriginalTitle = movieObj.results[0].original_title;
+            movieID = movieObj.results[0].id;
+
+            for (let i = 1; i < movieObj.total_results && movieOverview.length < 5; i++) {
+                movieOverview = movieObj.results[i].overview;
+                movieID = movieObj.results[i].id;
+                movieOriginalTitle = movieObj.results[i].original_title;
+            }
+
+            if (movieOverview.length < 5) {
+                speakOutput = "The movie " + movieOriginalTitle.replace(/&/g, '') + " doesn't have an overview.";
+            } else {
+                res = request('GET', baseURL + 'movie/' + movieID + '?api_key=' + APIKEY + '&language=en-US')
+                movieObj = JSON.parse(res.getBody());
+                runtime = movieObj.runtime;
+                if (runtime === null) {
+                    speakOutput = "For " + movieOriginalTitle.replace(/&/g, '') + ", the runtime. i don't know, but its overview is. " + movieOverview;
+                } else {
+                    speakOutput = "For " + movieOriginalTitle.replace(/&/g, '') + ", the runtime is: " + runtime + " minutes, and its overview is. " + movieOverview;
+                }
+            }
+        } else if (typeof movieRuntime !== 'undefined') { // only give runtime
+            let res = request('GET', baseURL + 'search/movie?api_key=' + APIKEY + '&query=' + movieRuntime);
+            let movieObj = JSON.parse(res.getBody());
+
+            movieID = movieObj.results[0].id;
+
+            movieOriginalTitle = movieObj.results[0].original_title;
+
+            res = request('GET', baseURL + 'movie/' + movieID + '?api_key=' + APIKEY + '&language=en-US')
+            movieObj = JSON.parse(res.getBody());
+            runtime = movieObj.runtime;
+
+            if (runtime === null) {
+                speakOutput = "I haven't seen " + movieOriginalTitle + ", you can figure it out.";
+            } else {
+                speakOutput = "For " + movieOriginalTitle.replace(/&/g, '') + ", the runtime is: " + runtime + " minutes.";
+            }
+        }
+
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .getResponse();
+
+    }
+};
+
+const ReviewIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
+            Alexa.getIntentName(handlerInput.requestEnvelope) === 'ReviewIntent';
     },
     handle(handlerInput) {
         const slots = handlerInput.requestEnvelope.request.intent.slots;
@@ -147,6 +217,7 @@ const HelpIntentHandler = {
             .getResponse();
     }
 };
+
 const CancelAndStopIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest' &&
@@ -160,6 +231,7 @@ const CancelAndStopIntentHandler = {
             .getResponse();
     }
 };
+
 const SessionEndedRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
@@ -213,9 +285,10 @@ const ErrorHandler = {
 exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
-        PedirReviewIntentHandler,
         RatingIntentHandler,
         dateIntentHandler,
+        OverviewIntentHandler,
+        ReviewIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
