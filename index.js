@@ -20,6 +20,7 @@ const LaunchRequestHandler = {
             .getResponse();
     }
 };
+
 const OverviewIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -83,8 +84,51 @@ const OverviewIntentHandler = {
             .speak(speakOutput)
             .reprompt('add a reprompt if you want to keep the session open for the user to respond')
             .getResponse();
+        
     }
 };
+
+const ReviewIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'ReviewIntent';
+    },
+    handle(handlerInput) {
+        const slots = handlerInput.requestEnvelope.request.intent.slots;
+        let movie = slots['movie'].value;
+        let speakOutput = "I didn't quite get that, try again, please."
+        let review;
+        var jsonReview
+        if (typeof movie !== 'undefined'){
+            var res = request('GET', baseURL + 'search/movie?api_key=' + APIKEY + '&query=' + movie);
+            var json = JSON.parse(res.getBody());
+            var number = json.total_results;
+            speakOutput = "I'm sorry, I couldn't find the movie " + movie;
+            if (number > 0) {
+                let id = json.results[0].id;
+                var reviewRes = request('GET', baseURL + 'movie/' + id + '/reviews?api_key=' + APIKEY + '&language=en-US');
+                review = reviewRes.getBody();
+                jsonReview = JSON.parse(review);
+                
+                speakOutput = "I'm sorry, I couldn't find any review for the movie " + json.results[0].title.replace(/&/g, '');
+                if (jsonReview.total_results > 0) {
+                    for (let i  = 0; i < jsonReview.total_results; i++) {
+                        if (!jsonReview.results[i].content.includes("&")) {
+                            speakOutput = 'This is one review of '+ json.results[0].title + ', ' + jsonReview.results[i].content;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt('Anything else?')
+        .getResponse();
+    }
+};
+
 const HelpIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -99,6 +143,7 @@ const HelpIntentHandler = {
             .getResponse();
     }
 };
+
 const CancelAndStopIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -112,6 +157,7 @@ const CancelAndStopIntentHandler = {
             .getResponse();
     }
 };
+
 const SessionEndedRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
@@ -166,6 +212,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         OverviewIntentHandler,
+        ReviewIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
