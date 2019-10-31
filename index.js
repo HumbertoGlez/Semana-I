@@ -15,7 +15,7 @@ const LaunchRequestHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'Welcome to Movie Review, tell me if you want a review, rating or overview follow by the movie title?';
+        const speakOutput = 'Welcome to Movie Review, tell me if you want a review, rating, release date, runtime or overview followed by the movie title.';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -183,7 +183,7 @@ const dateIntentHandler = {
                 let num = info.results[0].release_date;
                 movie = info.results[0].title.replace(/&/g, '');
                 if (num !== "") {
-                    speakOutput = "The date release of " + movie + " is " + num;
+                    speakOutput = "The release date of " + movie + " is " + num;
 
                 } else {
                     speakOutput = "We dont have the date release of " + movie;
